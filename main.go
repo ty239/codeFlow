@@ -7,8 +7,13 @@ import (
 )
 
 func main() {
+	startServer()
+}
 
-	http.HandleFunc("/", homeHandler)               //when someone vists / the function homeHandler will extucte
+func startServer() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", homeHandler) //when someone vists / the function homeHandler will extucte
+
 	fmt.Println("server is gonna run on port 8080") // health check of the server
-	log.Fatal(http.ListenAndServe(":8080", nil))    // listen for requests and do it on a deufalt http router
+	log.Fatal(http.ListenAndServe(":8080", mux))     // listen for requests and do it on the mux router
 }
