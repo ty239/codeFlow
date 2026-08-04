@@ -1,11 +1,16 @@
 package main
 
-import ( // lets us create packages and import them to are codeBase
-	"fmt" // package that used to create http server send request etc
-	"net/http"
-)
+import "net/http"
+
+func registerRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/", homeHandler)
+	mux.HandleFunc("/health", healthHandler)
+}
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "hello backend") //w send a response/data to the server
-	// while r contains the information about the request
+	writeJSON(w, http.StatusOK, map[string]string{"message": "hello backend"})
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }

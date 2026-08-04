@@ -1,19 +1,46 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func main() {
-	startServer()
-}
+	cfg := loadConfig()
 
-func startServer() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", homeHandler) //when someone vists / the function homeHandler will extucte
+	registerRoutes(mux)
 
-	fmt.Println("server is gonna run on port 8080") // health check of the server
-	log.Fatal(http.ListenAndServe(":8080", mux))     // listen for requests and do it on the mux router
+	srv := &http.Server{
+		Addr:         ":" + cfg.Port,
+		Handler:      withMiddleware(mux),
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	go func() {
+		log.Printf("server listening on port %s", cfg.Port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("server error: %v", err)
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	<-stop
+
+	log.Println("shutting down server...")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("graceful shutdown failed: %v", err)
+	}
+	log.Println("server stopped")
 }
