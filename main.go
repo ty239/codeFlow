@@ -13,8 +13,16 @@ import (
 func main() {
 	cfg := loadConfig()
 
+	ctx, cancelConnect := context.WithTimeout(context.Background(), 10*time.Second)
+	db, err := connectDB(ctx, cfg.DatabaseURL)
+	cancelConnect()
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
+	defer db.Close()
+
 	mux := http.NewServeMux()
-	registerRoutes(mux)
+	registerRoutes(mux, db)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

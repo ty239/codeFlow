@@ -1,8 +1,12 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
 
-func registerRoutes(mux *http.ServeMux) {
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+func registerRoutes(mux *http.ServeMux, db *pgxpool.Pool) {
 	mux.HandleFunc("/", homeHandler)
 	mux.HandleFunc("/health", healthHandler)
 }

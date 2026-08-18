@@ -3,7 +3,8 @@ package main
 import "os"
 
 type Config struct {
-	Port string
+	Port        string
+	DatabaseURL string
 }
 
 func loadConfig() Config {
@@ -11,5 +12,11 @@ func loadConfig() Config {
 	if port == "" {
 		port = "8080"
 	}
-	return Config{Port: port}
+
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = "postgres://postgres:postgres@localhost:5432/codeflow?sslmode=disable"
+	}
+
+	return Config{Port: port, DatabaseURL: dbURL}
 }
