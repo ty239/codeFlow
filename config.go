@@ -1,10 +1,14 @@
 package main
 
-import "os"
+import (
+	"log"
+	"os"
+)
 
 type Config struct {
 	Port        string
 	DatabaseURL string
+	JWTSecret   string
 }
 
 func loadConfig() Config {
@@ -18,5 +22,11 @@ func loadConfig() Config {
 		dbURL = "postgres://postgres:postgres@localhost:5432/codeflow?sslmode=disable"
 	}
 
-	return Config{Port: port, DatabaseURL: dbURL}
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Println("WARNING: JWT_SECRET not set, using an insecure default (dev only)")
+		jwtSecret = "dev-insecure-secret-change-me"
+	}
+
+	return Config{Port: port, DatabaseURL: dbURL, JWTSecret: jwtSecret}
 }

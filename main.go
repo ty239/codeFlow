@@ -21,8 +21,10 @@ func main() {
 	}
 	defer db.Close()
 
+	api := &apiServer{db: db, jwtSecret: []byte(cfg.JWTSecret)}
+
 	mux := http.NewServeMux()
-	registerRoutes(mux, db)
+	registerRoutes(mux, api)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

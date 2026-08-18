@@ -6,9 +6,17 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func registerRoutes(mux *http.ServeMux, db *pgxpool.Pool) {
+type apiServer struct {
+	db        *pgxpool.Pool
+	jwtSecret []byte
+}
+
+func registerRoutes(mux *http.ServeMux, s *apiServer) {
 	mux.HandleFunc("/", homeHandler)
 	mux.HandleFunc("/health", healthHandler)
+
+	mux.HandleFunc("POST /signup", s.signupHandler)
+	mux.HandleFunc("POST /login", s.loginHandler)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
