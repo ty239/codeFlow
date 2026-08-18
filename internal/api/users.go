@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -9,6 +9,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+
+	"codeflow-backend/internal/auth"
+	"codeflow-backend/internal/user"
 )
 
 type signupRequest struct {
@@ -26,7 +29,7 @@ type userResponse struct {
 	CreatedAt string `json:"created_at"`
 }
 
-func toUserResponse(u *User) userResponse {
+func toUserResponse(u *user.User) userResponse {
 	return userResponse{
 		ID:        u.ID,
 		Username:  u.Username,
@@ -36,7 +39,7 @@ func toUserResponse(u *User) userResponse {
 	}
 }
 
-func (s *apiServer) signupHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) signupHandler(w http.ResponseWriter, r *http.Request) {
 	var req signupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body")
@@ -56,13 +59,13 @@ func (s *apiServer) signupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	passwordHash, err := hashPassword(req.Password)
+	passwordHash, err := auth.HashPassword(req.Password)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to process password")
 		return
 	}
 
-	user, err := createUser(r.Context(), s.db, req.Username, req.Email, req.Name, passwordHash)
+	u, err := user.Create(r.Context(), s.db, req.Username, req.Email, req.Name, passwordHash)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -73,7 +76,7 @@ func (s *apiServer) signupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, toUserResponse(user))
+	writeJSON(w, http.StatusCreated, toUserResponse(u))
 }
 
 type loginRequest struct {
@@ -86,14 +89,14 @@ type loginResponse struct {
 	User  userResponse `json:"user"`
 }
 
-func (s *apiServer) loginHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	user, err := getUserByUsername(r.Context(), s.db, strings.TrimSpace(req.Username))
+	u, err := user.GetByUsername(r.Context(), s.db, strings.TrimSpace(req.Username))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			writeError(w, http.StatusUnauthorized, "invalid username or password")
@@ -103,16 +106,16 @@ func (s *apiServer) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !checkPassword(user.PasswordHash, req.Password) {
+	if !auth.CheckPassword(u.PasswordHash, req.Password) {
 		writeError(w, http.StatusUnauthorized, "invalid username or password")
 		return
 	}
 
-	token, err := generateToken(s.jwtSecret, user.ID)
+	token, err := auth.GenerateToken(s.jwtSecret, u.ID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to generate token")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, loginResponse{Token: token, User: toUserResponse(user)})
+	writeJSON(w, http.StatusOK, loginResponse{Token: token, User: toUserResponse(u)})
 }

@@ -1,4 +1,4 @@
-package main
+package auth
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func hashPassword(password string) (string, error) {
+func HashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
@@ -16,7 +16,7 @@ func hashPassword(password string) (string, error) {
 	return string(hash), nil
 }
 
-func checkPassword(hash, password string) bool {
+func CheckPassword(hash, password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
 
@@ -25,7 +25,7 @@ type tokenClaims struct {
 	jwt.RegisteredClaims
 }
 
-func generateToken(secret []byte, userID string) (string, error) {
+func GenerateToken(secret []byte, userID string) (string, error) {
 	claims := tokenClaims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -37,7 +37,7 @@ func generateToken(secret []byte, userID string) (string, error) {
 	return token.SignedString(secret)
 }
 
-func parseToken(secret []byte, tokenString string) (string, error) {
+func ParseToken(secret []byte, tokenString string) (string, error) {
 	claims := &tokenClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (any, error) {
 		return secret, nil

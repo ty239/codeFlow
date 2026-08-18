@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"log"
@@ -11,7 +11,7 @@ type Config struct {
 	JWTSecret   string
 }
 
-func loadConfig() Config {
+func Load() Config {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"

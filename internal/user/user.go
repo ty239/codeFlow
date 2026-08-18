@@ -1,4 +1,4 @@
-package main
+package user
 
 import (
 	"context"
@@ -16,7 +16,7 @@ type User struct {
 	CreatedAt    time.Time
 }
 
-func createUser(ctx context.Context, db *pgxpool.Pool, username, email, name, passwordHash string) (*User, error) {
+func Create(ctx context.Context, db *pgxpool.Pool, username, email, name, passwordHash string) (*User, error) {
 	const query = `
 		INSERT INTO users (username, email, name, password_hash)
 		VALUES ($1, $2, $3, $4)
@@ -32,7 +32,7 @@ func createUser(ctx context.Context, db *pgxpool.Pool, username, email, name, pa
 	return &u, nil
 }
 
-func getUserByUsername(ctx context.Context, db *pgxpool.Pool, username string) (*User, error) {
+func GetByUsername(ctx context.Context, db *pgxpool.Pool, username string) (*User, error) {
 	const query = `
 		SELECT id, username, email, name, password_hash, created_at
 		FROM users

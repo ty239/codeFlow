@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"log"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func withMiddleware(h http.Handler) http.Handler {
+func WithMiddleware(h http.Handler) http.Handler {
 	return recoverMiddleware(loggingMiddleware(corsMiddleware(h)))
 }
 
