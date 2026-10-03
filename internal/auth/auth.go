@@ -20,6 +20,16 @@ func CheckPassword(hash, password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
 
+// dummyHash is a real bcrypt hash that no user's password matches.
+var dummyHash, _ = bcrypt.GenerateFromPassword([]byte("codeflow-dummy-password"), bcrypt.DefaultCost)
+
+// SimulatePasswordCheck does the same bcrypt work as CheckPassword. Call it when
+// the user doesn't exist so a failed login takes the same time either way and
+// response timing can't reveal which usernames are registered.
+func SimulatePasswordCheck(password string) {
+	bcrypt.CompareHashAndPassword(dummyHash, []byte(password))
+}
+
 type tokenClaims struct {
 	UserID string `json:"user_id"`
 	jwt.RegisteredClaims

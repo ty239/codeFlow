@@ -42,15 +42,24 @@ func toUserResponse(u *user.User) userResponse {
 // maxBodyBytes caps JSON request bodies so a client can't stream an unbounded payload.
 const maxBodyBytes = 1 << 20
 
-func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
+// decodeJSON decodes the request body into dst. On failure it writes the error
+// response itself and returns false.
+func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) bool {
 	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
-	return json.NewDecoder(r.Body).Decode(dst)
+	if err := json.NewDecoder(r.Body).Decode(dst); err != nil {
+		if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
+			writeError(w, http.StatusRequestEntityTooLarge, "request body too large")
+		} else {
+			writeError(w, http.StatusBadRequest, "invalid request body")
+		}
+		return false
+	}
+	return true
 }
 
 func (s *Server) signupHandler(w http.ResponseWriter, r *http.Request) {
 	var req signupRequest
-	if err := decodeJSON(w, r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+	if !decodeJSON(w, r, &req) {
 		return
 	}
 
@@ -104,14 +113,14 @@ type loginResponse struct {
 
 func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
-	if err := decodeJSON(w, r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body")
+	if !decodeJSON(w, r, &req) {
 		return
 	}
 
 	u, err := user.GetByUsername(r.Context(), s.db, strings.TrimSpace(req.Username))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			auth.SimulatePasswordCheck(req.Password)
 			writeError(w, http.StatusUnauthorized, "invalid username or password")
 			return
 		}

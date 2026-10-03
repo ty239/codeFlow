@@ -46,3 +46,12 @@ func TestParseTokenRejectsOtherAlgorithms(t *testing.T) {
 		t.Fatal("expected error for non-HS256 token")
 	}
 }
+
+func TestDummyHashRejectsPasswords(t *testing.T) {
+	if len(dummyHash) == 0 {
+		t.Fatal("dummyHash was not generated")
+	}
+	if CheckPassword(string(dummyHash), "password123") {
+		t.Fatal("dummyHash should not match an ordinary password")
+	}
+}
