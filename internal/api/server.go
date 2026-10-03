@@ -16,8 +16,9 @@ func NewServer(db *pgxpool.Pool, jwtSecret []byte) *Server {
 }
 
 func (s *Server) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/", homeHandler)
-	mux.HandleFunc("/health", healthHandler)
+	// {$} matches "/" exactly; a bare "/" pattern would catch every unknown path.
+	mux.HandleFunc("GET /{$}", homeHandler)
+	mux.HandleFunc("GET /health", healthHandler)
 
 	mux.HandleFunc("POST /signup", s.signupHandler)
 	mux.HandleFunc("POST /login", s.loginHandler)

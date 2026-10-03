@@ -27,3 +27,17 @@ func TestHomeHandler(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
 	}
 }
+
+func TestUnknownPathReturns404(t *testing.T) {
+	mux := http.NewServeMux()
+	NewServer(nil, nil).RegisterRoutes(mux)
+
+	req := httptest.NewRequest(http.MethodGet, "/does-not-exist", nil)
+	w := httptest.NewRecorder()
+
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d", http.StatusNotFound, w.Code)
+	}
+}
