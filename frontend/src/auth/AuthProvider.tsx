@@ -13,3 +13,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthContextValue>(() => {
     async function login(username: string, password: string) {
+      const { token, user } = await api.login({ username, password })
+      setSession({ token, user })
+    }
+
+    async function signup(input: SignupRequest) {
+      await api.signup(input)
+      // Signup doesn't return a token, so log in with the same credentials.
+      await login(input.username, input.password)
+    }
+
+    return { user, login, signup, logout: clearSession }
+  }, [user])
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
