@@ -67,3 +67,71 @@ export function AuthPage() {
       <form className="card" onSubmit={handleSubmit} noValidate>
         <h2>{isSignup ? 'Create an account' : 'Log in'}</h2>
 
+        <label>
+          Username
+          <input
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
+            maxLength={50}
+            required
+          />
+        </label>
+
+        {isSignup && (
+          <>
+            <label>
+              Email
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                maxLength={255}
+                required
+              />
+            </label>
+            <label>
+              Name
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
+                maxLength={255}
+                required
+              />
+            </label>
+          </>
+        )}
+
+        <label>
+          Password
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete={isSignup ? 'new-password' : 'current-password'}
+            required
+          />
+        </label>
+
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+
+        <button type="submit" disabled={submitting}>
+          {submitting ? 'Please wait…' : isSignup ? 'Sign up' : 'Log in'}
+        </button>
+
+        <p className="switch">
+          {isSignup ? 'Already have an account?' : 'New to codeFlow?'}{' '}
+          <button type="button" className="link" onClick={switchMode}>
+            {isSignup ? 'Log in' : 'Create an account'}
+          </button>
+        </p>
+      </form>
+    </main>
+  )
+}
