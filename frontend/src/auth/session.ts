@@ -39,3 +39,43 @@ function loadSession(): Session | null {
     if (!raw) return null
     const session = JSON.parse(raw) as Session
     if (!session.token || !session.user || isExpired(session.token)) {
+      sessionStorage.removeItem(STORAGE_KEY)
+      return null
+    }
+    return session
+  } catch {
+    return null
+  }
+}
+
+export function getSession(): Session | null {
+  if (current && isExpired(current.token)) {
+    clearSession()
+  }
+  return current
+}
+
+export function setSession(session: Session): void {
+  current = session
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session))
+  } catch {
+    // Storage can be unavailable (private mode, blocked); memory still works.
+  }
+  listeners.forEach((listener) => listener(current))
+}
+
+export function clearSession(): void {
+  current = null
+  try {
+    sessionStorage.removeItem(STORAGE_KEY)
+  } catch {
+    // Nothing to clear if storage is unavailable.
+  }
+  listeners.forEach((listener) => listener(null))
+}
+
+export function onSessionChange(listener: Listener): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
