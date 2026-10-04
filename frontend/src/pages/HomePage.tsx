@@ -16,3 +16,21 @@ export function HomePage() {
 
   return (
     <main className="home">
+      <header className="topbar">
+        <span className="brand">codeFlow</span>
+        <span className={`status status-${status}`}>API {status}</span>
+        <button type="button" className="secondary" onClick={logout}>
+          Log out
+        </button>
+      </header>
+
+      <section className="card">
+        <h2>Welcome, {user?.name}</h2>
+        <p>
+          Signed in as <strong>{user?.username}</strong> ({user?.email}).
+        </p>
+        <p className="muted">Boards are coming next. Once the backend has board endpoints, they'll show up here.</p>
+      </section>
+    </main>
+  )
+}
