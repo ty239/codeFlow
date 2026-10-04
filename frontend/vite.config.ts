@@ -26,3 +26,30 @@ function contentSecurityPolicy(apiUrl: string | undefined): Plugin {
     name: 'content-security-policy',
     apply: 'build',
     transformIndexHtml(html) {
+      return html.replace(
+        '<meta charset="UTF-8" />',
+        `<meta charset="UTF-8" />\n    <meta http-equiv="Content-Security-Policy" content="${policy}" />`,
+      )
+    },
+  }
+}
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  // In development the browser calls /api on the Vite server, which forwards
+  // to the Go backend. Same origin means no CORS and no mixed content.
+  const apiProxy = {
+    '/api': {
+      target: env.BACKEND_URL ?? 'http://localhost:8080',
+      changeOrigin: true,
+      rewrite: (path: string) => path.replace(/^\/api/, ''),
+    },
+  }
+
+  return {
+    plugins: [react(), contentSecurityPolicy(env.VITE_API_URL)],
+    server: { proxy: apiProxy },
+    preview: { proxy: apiProxy },
+  }
+})
