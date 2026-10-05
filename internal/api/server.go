@@ -30,6 +30,6 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /{$}", homeHandler)
 	mux.HandleFunc("GET /health", healthHandler)
 
-	mux.HandleFunc("POST /signup", s.signupHandler)
-	mux.HandleFunc("POST /login", s.loginHandler)
+	mux.HandleFunc("POST /signup", s.signupLimiter.wrap(s.signupHandler))
+	mux.HandleFunc("POST /login", s.loginLimiter.wrap(s.loginHandler))
 }
