@@ -1,6 +1,10 @@
 package api
 
 import (
+	"math"
+	"net"
+	"net/http"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -64,4 +68,30 @@ func (l *rateLimiter) sweep(now time.Time) {
 		}
 	}
 	l.lastSweep = now
+}
+
+// wrap returns a handler that rejects requests over the limit with
+// 429 Too Many Requests and a Retry-After header, keyed by client IP.
+func (l *rateLimiter) wrap(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ok, retryAfter := l.allow(clientIP(r))
+		if !ok {
+			w.Header().Set("Retry-After", strconv.Itoa(int(math.Ceil(retryAfter.Seconds()))))
+			writeError(w, http.StatusTooManyRequests, "too many requests, please try again later")
+			return
+		}
+		next(w, r)
+	}
+}
+
+// clientIP returns the address of the directly connected client. It ignores
+// X-Forwarded-For on purpose: any client can set that header to dodge the
+// limit. If the server is later put behind a trusted reverse proxy, read the
+// proxy's header here instead.
+func clientIP(r *http.Request) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
 }
